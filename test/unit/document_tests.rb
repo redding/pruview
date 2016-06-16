@@ -1,45 +1,65 @@
-require 'test/helper'
+require 'assert'
+require 'pruview/document'
 
-module Pruview
+class Pruview::Document
 
-  class DocumentTest < Test::Unit::TestCase
-    include TestBelt
+  class UnitTests < Assert::Context
+    desc "Pruview::Document"
+    setup do
+      @document_class = Pruview::Document
+    end
+    subject{ @document_class }
 
-    context "A Pruview::Document"
-    setup { @file = Pruview::Document.new(FILES['basic image'], OUTPUT_PATH) }
-    subject { @file }
+  end
 
-    should have_instance_methods :to_jpg
+  class InitTests < UnitTests
+    desc "when init"
+    setup do
+      @doc = @document_class.new(FILES['basic image'], OUTPUT_PATH)
+    end
+    subject{ @doc }
 
-    should_complain_about("converting invalid images", /^Invalid source file/) do
-      Pruview::Document.new(FILES['invalid image'], OUTPUT_PATH)
+    should have_imeths :to_jpg
+
+    should "complain about converting invalid images" do
+      err = assert_raises Pruview::InvalidError do
+        @document_class.new(FILES['invalid image'], OUTPUT_PATH)
+      end
+      assert_match /^Invalid source file/, err.message
     end
 
-    should_complain_about("converting invalid image formats", /not supported - file extension: .poop/) do
-      Pruview::Document.new(FILES['invalid format'], OUTPUT_PATH)
+    should "complain about converting with invalid output paths" do
+      err = assert_raises Pruview::InvalidError do
+        @document_class.new(FILES['basic image'], INVALID_OUTPUT_PATH)
+      end
+      assert_match /^Invalid target directory/, err.message
     end
 
-    should_complain_about("converting with invalid output paths", /^Invalid target directory/) do
-      Pruview::Document.new(FILES['basic image'], INVALID_OUTPUT_PATH)
+    should "complain about converting invalid image formats" do
+      err = assert_raises Pruview::InvalidError do
+        @document_class.new(FILES['invalid format'], OUTPUT_PATH)
+      end
+      assert_match /^Document file extension not supported/, err.message
     end
 
     should "create a jpg version of itself" do
-      @output = @file.to_jpg('basic_image', 50, 50)
-      assert File.exists?(@output)
+      @output = subject.to_jpg('basic_image', 50, 50)
+      assert_true File.exists?(@output)
       assert_equal '.jpg', File.extname(@output)
     end
 
   end
 
-  class TiffTest < DocumentTest
-
-    context "of a TIFF file"
-    setup { @file = Pruview::Document.new(FILES['tiff'], OUTPUT_PATH) }
-    subject { @file }
+  class TiffTest < UnitTests
+    desc "when init with a TIFF file"
+    setup do
+      @doc = @document_class.new(FILES['tiff'], OUTPUT_PATH)
+    end
+    subject{ @doc }
 
     should "create a jpg version of itself" do
-      @output = @file.to_jpg('tiff', 50, 50)
-      assert File.exists?(@output)
+      @output = subject.to_jpg('tiff', 50, 50)
+      assert_true File.exists?(@output)
       assert_equal '.jpg', File.extname(@output)
     end
 

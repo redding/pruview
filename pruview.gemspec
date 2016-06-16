@@ -20,7 +20,7 @@ Gem::Specification.new do |gem|
 
   gem.add_development_dependency("assert", ["~> 2.16.1"])
 
-  gem.add_dependency("mini_magick", ["~> 3.0"])
+  gem.add_dependency("mini_magick", ["~> 4.0.0"])
   gem.add_dependency("flvtool2")
 
 end

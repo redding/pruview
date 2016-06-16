@@ -1,8 +1,21 @@
-require 'rubygems'
-require 'mini_magick'
-require 'yaml'
+require 'pathname'
+require "pruview/version"
+require 'pruview/document'
+require 'pruview/video'
+require 'pruview/video_image'
 
-require File.join(File.dirname(__FILE__), 'pruview', 'exceptions.rb')
-require File.join(File.dirname(__FILE__), 'pruview', 'document.rb')
-require File.join(File.dirname(__FILE__), 'pruview', 'video.rb')
-require File.join(File.dirname(__FILE__), 'pruview', 'video_image.rb')
+module Pruview
+
+  def self.gem_bin_path;   self.gem_path.join('bin');               end
+  def self.ffyml_bin_path; self.gem_bin_path.join('pruview-ffyml'); end
+
+
+  private
+
+  def self.gem_path
+    @gem_path ||= Pathname(Gem.loaded_specs['pruview'].full_gem_path)
+  end
+
+  InvalidError = Class.new(StandardError)
+
+end

@@ -1,17 +1,35 @@
+require 'mini_magick'
+require 'pruview'
+
 module Pruview
 
   class Document
 
-    TMP_DIR = '/tmp'
+    TMP_DIR         = '/tmp'.freeze
+    PROCESS_FORMAT  = 'jpg'.freeze
+    GLOBAL_CMD_ARGS = '-limit memory 500mb'.freeze
 
-    def initialize(source, target_dir, target_permission=0666)
-      raise Pruview::Exceptions::InvalidError, "Invalid source file: #{source.to_s}" if !File.file?(source)
-      raise Pruview::Exceptions::InvalidError, "Invalid target directory: #{target_dir.to_s}" if !File.directory?(target_dir)
-      raise Pruview::Exceptions::InvalidError, "Document not supported - file extension: " + file_extension(source) if !format_supported?(source)
-      @source = source
-      @target_dir = target_dir
+    PSD_EXT        = '.psd'.freeze
+    POSTSCRIPT_EXT = ['.pdf', '.eps', '.ai'].freeze
+    IMAGE_EXT      = ['.bmp', '.gif', '.jpg', '.jpeg', '.png', '.tga', '.tif', '.tiff', '.exr'].freeze
+
+    def initialize(source, target_dir, target_permission = 0666)
+      if !File.file?(source)
+        raise InvalidError, "Invalid source file: #{source.to_s}"
+      end
+      if !File.directory?(target_dir)
+        raise InvalidError, "Invalid target directory: #{target_dir.to_s}"
+      end
+      if !format_supported?(source)
+        raise InvalidError, "Document file extension not supported: " \
+                            "#{file_extension(source)}"
+      end
+
+      @source            = source
+      @target_dir        = target_dir
       @target_permission = target_permission
-      @image = process_image(get_image(source))
+
+      @image    = process_image(get_image(source))
       @tempfile = nil
     end
 
@@ -19,7 +37,7 @@ module Pruview
       scale_img = scale_image(width, height, crop)
       scale_img.format 'jpg'
       scale_img.combine_options do |img|
-        img.quality '90'
+        img.quality   '90'
         img.interlace 'plane'
       end
       tmp_target = File.join(TMP_DIR, "#{name.to_s}-#{$$}-#{Time.now.to_i}-#{rand(1000)}.jpg")
@@ -30,7 +48,7 @@ module Pruview
       return target
     end
 
-  protected
+    private
 
     def format_supported?(source)
       file_ext = file_extension(source)
@@ -54,7 +72,7 @@ module Pruview
       source = get_postscript_source(source) if format_postscript?(source)
       begin
         return MiniMagick::Image.open(source)
-      rescue Exception => err
+      rescue StandardError => err
         raise "Error reading source image: #{err.message}"
       end
     end
@@ -81,7 +99,7 @@ module Pruview
           command.args << GLOBAL_CMD_ARGS
         end
         return image
-      rescue Exception => err
+      rescue StandardError => err
         raise "Error processing image: #{err.message}"
       end
     end
@@ -96,7 +114,7 @@ module Pruview
           end
         end
         return image
-      rescue Exception => err
+      rescue StandardError => err
         raise "Error scaling image: #{err.message}"
       end
     end
@@ -137,13 +155,5 @@ module Pruview
     end
 
   end
-
-  # Configurations
-  Document::PROCESS_FORMAT = 'jpg'
-  Document::GLOBAL_CMD_ARGS = '-limit memory 500mb'
-
-  Document::PSD_EXT = '.psd'
-  Document::POSTSCRIPT_EXT = ['.pdf', '.eps', '.ai']
-  Document::IMAGE_EXT = ['.bmp', '.gif', '.jpg', '.jpeg', '.png', '.tga', '.tif', '.tiff', '.exr']
 
 end

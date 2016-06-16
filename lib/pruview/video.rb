@@ -1,31 +1,32 @@
+require 'pruview'
+
 module Pruview
 
   class Video
-    # Configurations
-    Video::FFYML = File.expand_path(File.join(File.dirname(__FILE__), '..', '..', 'bin', 'ffyml'))
-    Video::FFMPEG = 'ffmpeg'
-    Video::FLVTOOL = 'flvtool2'
-    Video::PAD_COLOR = "000000"
-    Video::AUDIO_BITRATE = 128 # kbps
-    Video::AUDIO_SAMPLING = 44100
 
-    Video::EXT = ['.avi', '.flv', '.mov', '.mpg', '.mp4']
+    FFMPEG         = 'ffmpeg'.freeze
+    PAD_COLOR      = "000000".freeze
+    AUDIO_BITRATE  = 128.freeze # kbps
+    AUDIO_SAMPLING = 44100.freeze
 
-    # this class assumes you have 'ffmpeg' and 'flvtool2' installed and in your path
+    EXT = ['.avi', '.flv', '.mov', '.mpg', '.mp4'].freeze
+
+    # this class assumes you have 'ffmpeg' installed and in your path
 
     def initialize(source, target_dir, bitrate_mult = 1)
-      raise Pruview::Exceptions::InvalidError, "Invalid source file:: #{source.to_s}" if !File.file?(source)
-      raise Pruview::Exceptions::InvalidError, "Invalid target directory: #{target_dir.to_s}" if !File.directory?(target_dir)
-      raise Pruview::Exceptions::InvalidError, "Video not supported - file extension: " + file_extension(source) if !format_supported?(source)
-      @source = source
-      @target_dir = target_dir
+      if !File.file?(source)
+        raise InvalidError, "Invalid source file:: #{source.to_s}"
+      end
+      if !File.directory?(target_dir)
+        raise InvalidError, "Invalid target directory: #{target_dir.to_s}"
+      end
+      if !format_supported?(source)
+        raise InvalidError, "Video file extension not supported: " \
+                            "#{file_extension(source)}"
+      end
+      @source             = source
+      @target_dir         = target_dir
       @bitrate_multiplier = bitrate_mult
-    end
-
-    def to_flv(name, width, height, scale_static = false)
-      target = to_base(name, width, height, '.flv', scale_static)
-      run("#{FLVTOOL} -U #{target}", "Unable to add meta-data for #{target}.")
-      return target
     end
 
     def to_mov(name, width, height, scale_static = false)
@@ -43,10 +44,10 @@ module Pruview
       VideoImage.to_jpg(@source, @target_dir, name)
     end
 
-  protected
+    private
 
     def to_base(name, width, height, extension, scale_static)
-      target = File.join(@target_dir, name.to_s + extension)
+      target   = File.join(@target_dir, name.to_s + extension)
       info_yml = File.join(@target_dir, name.to_s + '_info.yml')
       run(build_command(@source, target, width, height, get_info(info_yml), scale_static), "Unable to convert #{@source} to #{target}.")
       return target
@@ -68,7 +69,7 @@ module Pruview
     end
 
     def info_command(source, yml_path)
-      %Q{#{FFYML} "#{source}" "#{yml_path}"}
+      %Q{#{Pruview.ffyml_bin_path} "#{source}" "#{yml_path}"}
     end
 
     def build_command(source, target, width, height, info, scale_static)
@@ -138,8 +139,11 @@ module Pruview
     end
 
     def run(command, error_message = "Unknown error.")
-      raise "Ffmpeg error: " + error_message + " - command: '#{command}'" if !system(command)
+      if !system(command)
+        raise "Ffmpeg error: " + error_message + " - command: '#{command}'"
+      end
     end
 
   end
+
 end
