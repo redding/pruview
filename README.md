@@ -1,3 +1,5 @@
+=== **This has been archived and is not maintained.** ===
+
 # Pruview
 
 Generate image previews (thumbnails) in Ruby.  **Note**: this is a fork/copy and rework/modernization of the original kelredd-pruview gem: https://github.com/kellyredding/pruview.
